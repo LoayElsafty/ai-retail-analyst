@@ -1,0 +1,893 @@
+[
+ {
+  "q": "What were net sales and gross margin by year?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "SELECT strftime('%Y', order_date) AS order_year, ROUND(SUM(net_sales), 2) AS net_sales, ROUND(SUM(gross_profit) * 100.0 / NULLIF(SUM(net_sales), 0), 1) AS gross_margin_pct FROM fct_sales GROUP BY strftime('%Y', order_date) ORDER BY order_year",
+    "guard": "passed",
+    "error": "",
+    "rows": 3,
+    "ms": 153
+   }
+  ],
+  "answer": "Net sales grew each year, from $866,281 in 2023 to $1,228,157 in 2024 and $1,775,968 in 2025. Gross margin stayed essentially flat at 51.9% in 2023 and 2024, then 52.0% in 2025.",
+  "assumption": "Gross margin is shown as a percentage of net sales, per calendar year of order_date.",
+  "chart": {
+   "type": "bar",
+   "x": "order_year",
+   "y": "net_sales"
+  },
+  "columns": [
+   "order_year",
+   "net_sales",
+   "gross_margin_pct"
+  ],
+  "values": [
+   [
+    "2023",
+    866280.83,
+    51.9
+   ],
+   [
+    "2024",
+    1228156.87,
+    51.9
+   ],
+   [
+    "2025",
+    1775968.35,
+    52
+   ]
+  ]
+ },
+ {
+  "q": "Which 5 categories made the most gross profit in 2025?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "SELECT p.category AS category, ROUND(SUM(s.gross_profit), 2) AS gross_profit FROM fct_sales s JOIN dim_product p ON p.product_id = s.product_id WHERE strftime('%Y', s.order_date) = '2025' GROUP BY p.category ORDER BY SUM(s.gross_profit) DESC LIMIT 5",
+    "guard": "passed",
+    "error": "",
+    "rows": 5,
+    "ms": 48
+   }
+  ],
+  "answer": "Outerwear & Coats led 2025 gross profit at $126,716, followed by Jeans ($92,424), Sweaters ($68,655), Suits & Sport Coats ($64,109) and Swim ($51,414). Together these five categories made $403,318 in gross profit, with returned and cancelled items counted as $0 profit.",
+  "assumption": "Gross profit is SUM(gross_profit) over 2025 order dates; returned and cancelled items contribute 0 profit.",
+  "chart": {
+   "type": "bar",
+   "x": "category",
+   "y": "gross_profit"
+  },
+  "columns": [
+   "category",
+   "gross_profit"
+  ],
+  "values": [
+   [
+    "Outerwear & Coats",
+    126716.34
+   ],
+   [
+    "Jeans",
+    92423.71
+   ],
+   [
+    "Sweaters",
+    68655.32
+   ],
+   [
+    "Suits & Sport Coats",
+    64108.91
+   ],
+   [
+    "Swim",
+    51414.41
+   ]
+  ]
+ },
+ {
+  "q": "Which traffic source brings the highest average order value?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "SELECT c.traffic_source AS traffic_source, ROUND(SUM(s.net_sales) / COUNT(DISTINCT s.order_id), 2) AS avg_order_value FROM fct_sales s JOIN dim_customer c ON s.customer_id = c.customer_id WHERE s.status NOT IN ('Cancelled', 'Returned') GROUP BY c.traffic_source ORDER BY avg_order_value DESC",
+    "guard": "passed",
+    "error": "",
+    "rows": 5,
+    "ms": 52
+   }
+  ],
+  "answer": "Display brings the highest average order value at $91.22, followed by Search ($86.65) and Organic ($85.43). Email ($83.34) and Facebook ($82.60) are lowest, so the gap from top to bottom is $8.62.\n\nThis covers 2023-2025 and excludes cancelled and returned items.",
+  "assumption": "Computed AOV per traffic source across all years (2023-2025), using only items that are not cancelled or returned.",
+  "chart": {
+   "type": "bar",
+   "x": "traffic_source",
+   "y": "avg_order_value"
+  },
+  "columns": [
+   "traffic_source",
+   "avg_order_value"
+  ],
+  "values": [
+   [
+    "Display",
+    91.22
+   ],
+   [
+    "Search",
+    86.65
+   ],
+   [
+    "Organic",
+    85.43
+   ],
+   [
+    "Email",
+    83.34
+   ],
+   [
+    "Facebook",
+    82.6
+   ]
+  ]
+ },
+ {
+  "q": "How did the return rate change month by month in 2025?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "SELECT substr(order_date, 1, 7) AS order_month, ROUND(SUM(status = 'Returned') * 100.0 / NULLIF(SUM(status <> 'Cancelled'), 0), 1) AS return_rate_pct FROM fct_sales WHERE strftime('%Y', order_date) = '2025' GROUP BY substr(order_date, 1, 7) ORDER BY order_month",
+    "guard": "passed",
+    "error": "",
+    "rows": 12,
+    "ms": 39
+   }
+  ],
+  "answer": "The return rate stayed in a narrow band of 10.5% to 12.9% through 2025, with no clear trend. It peaked in February at 12.9% and bottomed in August at 10.5%, then settled around 12.0%-12.3% from September to December. January started at 11.5% and December ended at 12.0%, a net rise of 0.5 points.",
+  "assumption": "Months are based on order_date, and return rate uses the standard definition (returned items divided by non-cancelled items).",
+  "chart": {
+   "type": "line",
+   "x": "order_month",
+   "y": "return_rate_pct"
+  },
+  "columns": [
+   "order_month",
+   "return_rate_pct"
+  ],
+  "values": [
+   [
+    "2025-01",
+    11.5
+   ],
+   [
+    "2025-02",
+    12.9
+   ],
+   [
+    "2025-03",
+    11.1
+   ],
+   [
+    "2025-04",
+    12.7
+   ],
+   [
+    "2025-05",
+    11.3
+   ],
+   [
+    "2025-06",
+    11.3
+   ],
+   [
+    "2025-07",
+    10.8
+   ],
+   [
+    "2025-08",
+    10.5
+   ],
+   [
+    "2025-09",
+    12.3
+   ],
+   [
+    "2025-10",
+    12
+   ],
+   [
+    "2025-11",
+    12.2
+   ],
+   [
+    "2025-12",
+    12
+   ]
+  ]
+ },
+ {
+  "q": "Which brands have the worst return rate, with at least 500 items sold?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "SELECT p.brand AS brand, SUM(f.status NOT IN ('Cancelled','Returned')) AS items_sold, SUM(f.status = 'Returned') AS returned_items, ROUND(SUM(f.status = 'Returned') * 100.0 / NULLIF(SUM(f.status <> 'Cancelled'), 0), 1) AS return_rate_pct FROM fct_sales f JOIN dim_product p ON p.product_id = f.product_id GROUP BY p.brand HAVING SUM(f.status NOT IN ('Cancelled','Returned')) >= 500 ORDER BY return_rate_pct DESC LIMIT 10",
+    "guard": "passed",
+    "error": "",
+    "rows": 10,
+    "ms": 95
+   }
+  ],
+  "answer": "Levi's has the worst return rate at 13.3% (87 returned items against 568 sold), followed by Tommy Hilfiger at 12.7% and Hanes at 12.1%. Among brands with at least 500 items sold, the top 10 range from 10.6% (Quiksilver) to 13.3%, across 2023-2025. Allegra K has the highest volume of the group, with 2,272 items sold and 293 returns (11.4%).",
+  "assumption": "Across all years (2023-2025), 'items sold' means non-cancelled, non-returned items per the metric definition, and I show the top 10 brands by return rate.",
+  "chart": {
+   "type": "bar",
+   "x": "brand",
+   "y": "return_rate_pct"
+  },
+  "columns": [
+   "brand",
+   "items_sold",
+   "returned_items",
+   "return_rate_pct"
+  ],
+  "values": [
+   [
+    "Levi's",
+    568,
+    87,
+    13.3
+   ],
+   [
+    "Tommy Hilfiger",
+    586,
+    85,
+    12.7
+   ],
+   [
+    "Hanes",
+    713,
+    98,
+    12.1
+   ],
+   [
+    "Allegra K",
+    2272,
+    293,
+    11.4
+   ],
+   [
+    "Carhartt",
+    904,
+    115,
+    11.3
+   ],
+   [
+    "Volcom",
+    671,
+    85,
+    11.2
+   ],
+   [
+    "Calvin Klein",
+    1162,
+    147,
+    11.2
+   ],
+   [
+    "Hurley",
+    548,
+    67,
+    10.9
+   ],
+   [
+    "Dockers",
+    544,
+    66,
+    10.8
+   ],
+   [
+    "Quiksilver",
+    591,
+    70,
+    10.6
+   ]
+  ]
+ },
+ {
+  "q": "What share of 2025 net sales came from the top 10 brands?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "WITH brand_sales AS (SELECT p.brand AS brand, SUM(f.net_sales) AS brand_net_sales FROM fct_sales f JOIN dim_product p ON p.product_id = f.product_id WHERE strftime('%Y', f.order_date) = '2025' GROUP BY p.brand), ranked AS (SELECT brand, brand_net_sales, ROW_NUMBER() OVER (ORDER BY brand_net_sales DESC) AS brand_rank FROM brand_sales) SELECT ROUND(SUM(CASE WHEN brand_rank <= 10 THEN brand_net_sales ELSE 0 END), 2) AS top_10_brands_net_sales, ROUND(SUM(brand_net_sales), 2) AS total_net_sales, ROUND(SUM(CASE WHEN brand_rank <= 10 THEN brand_net_sales ELSE 0 END) * 100.0 / NULLIF(SUM(brand_net_sales), 0), 1) AS top_10_brands_share_pct FROM ranked",
+    "guard": "passed",
+    "error": "",
+    "rows": 1,
+    "ms": 67
+   }
+  ],
+  "answer": "The top 10 brands generated 13.5% of 2025 net sales, or $239,552 out of $1,775,968 total. Brands are ranked by 2025 net sales, so sales are spread widely across many brands rather than concentrated in a few.",
+  "assumption": "Top 10 brands are ranked by 2025 net sales; share is relative to total 2025 net sales across all brands.",
+  "chart": {
+   "type": "none",
+   "x": "",
+   "y": ""
+  },
+  "columns": [
+   "top_10_brands_net_sales",
+   "total_net_sales",
+   "top_10_brands_share_pct"
+  ],
+  "values": [
+   [
+    239552.03,
+    1775968.35,
+    13.5
+   ]
+  ]
+ },
+ {
+  "q": "Which country's customers spend the most per order?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "WITH items AS (SELECT CASE WHEN c.country = 'Espa\u00f1a' THEN 'Spain' ELSE c.country END AS country, s.order_id, s.net_sales FROM fct_sales s JOIN dim_customer c ON c.customer_id = s.customer_id WHERE s.status NOT IN ('Cancelled','Returned')) SELECT country, ROUND(SUM(net_sales) / COUNT(DISTINCT order_id), 2) AS avg_order_value, COUNT(DISTINCT order_id) AS orders, ROUND(SUM(net_sales), 2) AS net_sales FROM items GROUP BY country ORDER BY avg_order_value DESC LIMIT 10",
+    "guard": "passed",
+    "error": "",
+    "rows": 10,
+    "ms": 50
+   }
+  ],
+  "answer": "Japan's customers spend the most per order at $87 on average (net sales of $96,179 across 1,100 orders), but the lead is slim. France ($87) and the United States ($87) are within about $0.50, and the top 10 countries all fall between $84 and $87 per order. Cancelled and returned items are excluded.",
+  "assumption": "Spend per order is average order value (net sales per order, excluding cancelled and returned items) over all years, with 'Espa\u00f1a' merged into 'Spain'; top 10 shown with order counts for context.",
+  "chart": {
+   "type": "bar",
+   "x": "country",
+   "y": "avg_order_value"
+  },
+  "columns": [
+   "country",
+   "avg_order_value",
+   "orders",
+   "net_sales"
+  ],
+  "values": [
+   [
+    "Japan",
+    87.44,
+    1100,
+    96179.41
+   ],
+   [
+    "France",
+    87.04,
+    2210,
+    192348.69
+   ],
+   [
+    "United States",
+    86.97,
+    9983,
+    868257.6
+   ],
+   [
+    "China",
+    86.81,
+    15366,
+    1333929.32
+   ],
+   [
+    "Germany",
+    86.38,
+    1812,
+    156513.87
+   ],
+   [
+    "Spain",
+    86.12,
+    1772,
+    152603.6
+   ],
+   [
+    "United Kingdom",
+    85.92,
+    2044,
+    175617
+   ],
+   [
+    "South Korea",
+    85.01,
+    2390,
+    203172.73
+   ],
+   [
+    "Brasil",
+    84.52,
+    6656,
+    562585.85
+   ],
+   [
+    "Belgium",
+    84.34,
+    457,
+    38545.47
+   ]
+  ]
+ },
+ {
+  "q": "How many customers placed more than one order?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "WITH cust_orders AS (SELECT customer_id, COUNT(DISTINCT order_id) AS order_count FROM fct_sales WHERE status <> 'Cancelled' GROUP BY customer_id) SELECT COUNT(*) AS repeat_customers FROM cust_orders WHERE order_count > 1",
+    "guard": "passed",
+    "error": "",
+    "rows": 1,
+    "ms": 29
+   }
+  ],
+  "answer": "8,841 customers placed more than one order. This counts distinct orders with non-cancelled items across the full 2023-2025 period.",
+  "assumption": "Orders are distinct order_ids on non-cancelled items, across the full 2023-2025 period.",
+  "chart": {
+   "type": "none",
+   "x": "",
+   "y": ""
+  },
+  "columns": [
+   "repeat_customers"
+  ],
+  "values": [
+   [
+    8841
+   ]
+  ]
+ },
+ {
+  "q": "By how much did net sales grow from 2024 to 2025?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "SELECT ROUND(SUM(CASE WHEN strftime('%Y', order_date) = '2024' THEN net_sales ELSE 0 END), 2) AS net_sales_2024, ROUND(SUM(CASE WHEN strftime('%Y', order_date) = '2025' THEN net_sales ELSE 0 END), 2) AS net_sales_2025, ROUND(SUM(CASE WHEN strftime('%Y', order_date) = '2025' THEN net_sales ELSE 0 END) - SUM(CASE WHEN strftime('%Y', order_date) = '2024' THEN net_sales ELSE 0 END), 2) AS net_sales_growth_usd, ROUND((SUM(CASE WHEN strftime('%Y', order_date) = '2025' THEN net_sales ELSE 0 END) - SUM(CASE WHEN strftime('%Y', order_date) = '2024' THEN net_sales ELSE 0 END)) * 100.0 / NULLIF(SUM(CASE WHEN strftime('%Y', order_date) = '2024' THEN net_sales ELSE 0 END), 0), 1) AS net_sales_growth_pct FROM fct_sales WHERE strftime('%Y', order_date) IN ('2024', '2025')",
+    "guard": "passed",
+    "error": "",
+    "rows": 1,
+    "ms": 48
+   }
+  ],
+  "answer": "Net sales grew by $547,811 (44.6%) from 2024 to 2025, rising from $1,228,157 to $1,775,968.",
+  "assumption": "Growth is reported both as absolute USD change and percent change in net sales, 2025 vs 2024.",
+  "chart": {
+   "type": "none",
+   "x": "",
+   "y": ""
+  },
+  "columns": [
+   "net_sales_2024",
+   "net_sales_2025",
+   "net_sales_growth_usd",
+   "net_sales_growth_pct"
+  ],
+  "values": [
+   [
+    1228156.87,
+    1775968.35,
+    547811.48,
+    44.6
+   ]
+  ]
+ },
+ {
+  "q": "Which distribution center ships fastest, and which slowest?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "SELECT p.distribution_center AS distribution_center, ROUND(AVG(s.days_to_ship), 2) AS avg_days_to_ship, COUNT(*) AS shipped_items FROM fct_sales s JOIN dim_product p ON p.product_id = s.product_id WHERE s.days_to_ship IS NOT NULL GROUP BY p.distribution_center ORDER BY avg_days_to_ship ASC",
+    "guard": "passed",
+    "error": "",
+    "rows": 10,
+    "ms": 44
+   }
+  ],
+  "answer": "New Orleans LA ships fastest at 0.5 average days to ship (4,008 items), while Philadelphia PA is slowest at 0.58 days (5,193 items). The gap is small: all 10 centers fall within 0.08 days of each other.",
+  "assumption": "Average days to ship per distribution center over all shipped items, sorted so the fastest is first and the slowest last.",
+  "chart": {
+   "type": "bar",
+   "x": "distribution_center",
+   "y": "avg_days_to_ship"
+  },
+  "columns": [
+   "distribution_center",
+   "avg_days_to_ship",
+   "shipped_items"
+  ],
+  "values": [
+   [
+    "New Orleans LA",
+    0.5,
+    4008
+   ],
+   [
+    "Chicago IL",
+    0.51,
+    7547
+   ],
+   [
+    "Houston TX",
+    0.52,
+    7051
+   ],
+   [
+    "Memphis TN",
+    0.52,
+    7529
+   ],
+   [
+    "Charleston SC",
+    0.53,
+    5174
+   ],
+   [
+    "Port Authority of New York/New Jersey NY/NJ",
+    0.53,
+    5191
+   ],
+   [
+    "Mobile AL",
+    0.55,
+    5777
+   ],
+   [
+    "Los Angeles CA",
+    0.57,
+    5423
+   ],
+   [
+    "Savannah GA",
+    0.57,
+    3592
+   ],
+   [
+    "Philadelphia PA",
+    0.58,
+    5193
+   ]
+  ]
+ },
+ {
+  "q": "What is net sales by department (Men vs Women) for 2024?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "SELECT p.department AS department, ROUND(SUM(s.net_sales), 2) AS net_sales FROM fct_sales s JOIN dim_product p ON s.product_id = p.product_id WHERE strftime('%Y', s.order_date) = '2024' GROUP BY p.department ORDER BY net_sales DESC",
+    "guard": "passed",
+    "error": "",
+    "rows": 2,
+    "ms": 33
+   }
+  ],
+  "answer": "Men led 2024 net sales at $652,541, ahead of Women at $575,616, a gap of $76,925. Men made up 53.1% of the two departments' combined net sales and Women 46.9%.",
+  "assumption": "",
+  "chart": {
+   "type": "bar",
+   "x": "department",
+   "y": "net_sales"
+  },
+  "columns": [
+   "department",
+   "net_sales"
+  ],
+  "values": [
+   [
+    "Men",
+    652541.05
+   ],
+   [
+    "Women",
+    575615.82
+   ]
+  ]
+ },
+ {
+  "q": "Which month had the highest return rate in 2025, and what was it?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "SELECT substr(order_date, 1, 7) AS month, ROUND(SUM(status = 'Returned') * 100.0 / NULLIF(SUM(status <> 'Cancelled'), 0), 1) AS return_rate_pct FROM fct_sales WHERE strftime('%Y', order_date) = '2025' GROUP BY substr(order_date, 1, 7) ORDER BY SUM(status = 'Returned') * 100.0 / NULLIF(SUM(status <> 'Cancelled'), 0) DESC LIMIT 1",
+    "guard": "passed",
+    "error": "",
+    "rows": 1,
+    "ms": 35
+   }
+  ],
+  "answer": "February 2025 had the highest return rate of the year at 12.9%. This is based on order date, with returned orders divided by non-cancelled orders in each month.",
+  "assumption": "Month is based on order_date; return rate uses the standard definition (returned items / non-cancelled items) within each month of 2025.",
+  "chart": {
+   "type": "none",
+   "x": "month",
+   "y": "return_rate_pct"
+  },
+  "columns": [
+   "month",
+   "return_rate_pct"
+  ],
+  "values": [
+   [
+    "2025-02",
+    12.9
+   ]
+  ]
+ },
+ {
+  "q": "What were total net sales from customers in Spain?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "SELECT ROUND(SUM(f.net_sales), 2) AS total_net_sales FROM fct_sales f JOIN dim_customer c ON c.customer_id = f.customer_id WHERE c.country IN ('Spain', 'Espa\u00f1a')",
+    "guard": "passed",
+    "error": "",
+    "rows": 1,
+    "ms": 12
+   }
+  ],
+  "answer": "Total net sales from customers in Spain were $152,604, covering all dates from 2023 to 2025. This treats \"Spain\" and \"Espa\u00f1a\" as the same country.",
+  "assumption": "Spain and Espa\u00f1a are treated as one country, and the total covers all dates from 2023 to 2025.",
+  "chart": {
+   "type": "none",
+   "x": "",
+   "y": ""
+  },
+  "columns": [
+   "total_net_sales"
+  ],
+  "values": [
+   [
+    152603.6
+   ]
+  ]
+ },
+ {
+  "q": "Which category has the lowest gross margin?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "SELECT p.category AS category, ROUND(SUM(f.gross_profit) * 100.0 / NULLIF(SUM(f.net_sales), 0), 1) AS gross_margin_pct FROM fct_sales f JOIN dim_product p ON p.product_id = f.product_id GROUP BY p.category HAVING SUM(f.net_sales) > 0 ORDER BY SUM(f.gross_profit) * 100.0 / NULLIF(SUM(f.net_sales), 0) ASC LIMIT 1",
+    "guard": "passed",
+    "error": "",
+    "rows": 1,
+    "ms": 81
+   }
+  ],
+  "answer": "Clothing Sets has the lowest gross margin at 38.7%. This is calculated across all years (2023-2025) and all order statuses.",
+  "assumption": "Gross margin is calculated across all years (2023-2025) and all order statuses, using the standard definition.",
+  "chart": {
+   "type": "none",
+   "x": "category",
+   "y": "gross_margin_pct"
+  },
+  "columns": [
+   "category",
+   "gross_margin_pct"
+  ],
+  "values": [
+   [
+    "Clothing Sets",
+    38.7
+   ]
+  ]
+ },
+ {
+  "q": "How many orders were cancelled in 2025, and what share is that?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "SELECT COUNT(DISTINCT CASE WHEN status = 'Cancelled' THEN order_id END) AS cancelled_orders, COUNT(DISTINCT order_id) AS total_orders, ROUND(COUNT(DISTINCT CASE WHEN status = 'Cancelled' THEN order_id END) * 100.0 / NULLIF(COUNT(DISTINCT order_id), 0), 1) AS cancelled_order_share_pct, SUM(status = 'Cancelled') AS cancelled_items, ROUND(SUM(status = 'Cancelled') * 100.0 / COUNT(*), 1) AS item_cancellation_rate_pct FROM fct_sales WHERE strftime('%Y', order_date) = '2025'",
+    "guard": "passed",
+    "error": "",
+    "rows": 1,
+    "ms": 32
+   }
+  ],
+  "answer": "In 2025, 4,272 of 27,598 orders were cancelled, a share of 15.5%. An order counts as cancelled if it has at least one cancelled item. At the item level, 6,095 items were cancelled, a rate of 15.3%.",
+  "assumption": "An order counts as cancelled if it has at least one cancelled item. The share is cancelled orders over all 2025 orders, and the standard item-level cancellation rate is included for reference.",
+  "chart": {
+   "type": "none"
+  },
+  "columns": [
+   "cancelled_orders",
+   "total_orders",
+   "cancelled_order_share_pct",
+   "cancelled_items",
+   "item_cancellation_rate_pct"
+  ],
+  "values": [
+   [
+    4272,
+    27598,
+    15.5,
+    6095,
+    15.3
+   ]
+  ]
+ },
+ {
+  "q": "Show the top 3 brands by net sales in the Jeans category.",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "SELECT p.brand AS brand, ROUND(SUM(f.net_sales), 2) AS net_sales FROM fct_sales f JOIN dim_product p ON f.product_id = p.product_id WHERE p.category = 'Jeans' GROUP BY p.brand ORDER BY SUM(f.net_sales) DESC LIMIT 3",
+    "guard": "passed",
+    "error": "",
+    "rows": 3,
+    "ms": 32
+   }
+  ],
+  "answer": "7 For All Mankind leads Jeans with $54,262 in net sales, followed by True Religion at $49,327 and Diesel at $35,803. These totals cover all years (2023-2025), since no time period was specified.",
+  "assumption": "No time period was given, so net sales are totaled across all years (2023-2025).",
+  "chart": {
+   "type": "bar",
+   "x": "brand",
+   "y": "net_sales"
+  },
+  "columns": [
+   "brand",
+   "net_sales"
+  ],
+  "values": [
+   [
+    "7 For All Mankind",
+    54261.87
+   ],
+   [
+    "True Religion",
+    49326.8
+   ],
+   [
+    "Diesel",
+    35803.02
+   ]
+  ]
+ },
+ {
+  "q": "Which weekday do we sell the most?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "SELECT CASE strftime('%w', order_date) WHEN '0' THEN 'Sunday' WHEN '1' THEN 'Monday' WHEN '2' THEN 'Tuesday' WHEN '3' THEN 'Wednesday' WHEN '4' THEN 'Thursday' WHEN '5' THEN 'Friday' WHEN '6' THEN 'Saturday' END AS weekday, ROUND(SUM(net_sales), 2) AS net_sales, SUM(status NOT IN ('Cancelled','Returned')) AS items_sold FROM fct_sales GROUP BY strftime('%w', order_date) ORDER BY net_sales DESC LIMIT 7",
+    "guard": "passed",
+    "error": "",
+    "rows": 7,
+    "ms": 62
+   }
+  ],
+  "answer": "Sunday is the top weekday, with $576,764 in net sales and 9,408 items sold. Friday is second at $563,808, and Saturday is lowest at $538,304. This is based on total net sales across 2023-2025.",
+  "assumption": "Interpreted 'sell the most' as highest total net sales by day of week across all dates (2023-2025).",
+  "chart": {
+   "type": "bar",
+   "x": "weekday",
+   "y": "net_sales"
+  },
+  "columns": [
+   "weekday",
+   "net_sales",
+   "items_sold"
+  ],
+  "values": [
+   [
+    "Sunday",
+    576764.58,
+    9408
+   ],
+   [
+    "Friday",
+    563807.93,
+    9342
+   ],
+   [
+    "Tuesday",
+    558897.08,
+    9388
+   ],
+   [
+    "Monday",
+    545911.83,
+    9283
+   ],
+   [
+    "Thursday",
+    544562.26,
+    9206
+   ],
+   [
+    "Wednesday",
+    542158.06,
+    9271
+   ],
+   [
+    "Saturday",
+    538304.31,
+    9199
+   ]
+  ]
+ },
+ {
+  "q": "What was our marketing spend in 2025?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "",
+    "guard": "declined",
+    "error": "",
+    "rows": 0,
+    "ms": 0
+   }
+  ],
+  "answer": "",
+  "assumption": "Marketing spend is not available: the tables only hold sales, product and customer data, with no marketing cost or spend fields (traffic_source only says how customers first arrived).",
+  "chart": {
+   "type": "none"
+  },
+  "columns": [],
+  "values": []
+ },
+ {
+  "q": "What is the average customer satisfaction score by category?",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "",
+    "guard": "declined",
+    "error": "",
+    "rows": 0,
+    "ms": 0
+   }
+  ],
+  "answer": "",
+  "assumption": "The tables contain no customer satisfaction score or any survey or rating data, so this cannot be answered.",
+  "chart": {
+   "type": "none"
+  },
+  "columns": [],
+  "values": []
+ },
+ {
+  "q": "Delete all cancelled orders from the data.",
+  "mode": "rec",
+  "model": "claude-sonnet-5-5",
+  "attempts": [
+   {
+    "sql": "",
+    "guard": "declined",
+    "error": "",
+    "rows": 0,
+    "ms": 0
+   }
+  ],
+  "answer": "",
+  "assumption": "This request asks to modify data (delete rows), but I can only write read-only SELECT queries, so I can't delete cancelled orders. I can instead show cancelled items, or analyze the data with cancelled items excluded.",
+  "chart": {
+   "type": "none"
+  },
+  "columns": [],
+  "values": []
+ }
+]

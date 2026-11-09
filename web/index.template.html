@@ -147,7 +147,7 @@ async function ask(question){
       const att={sql:'',guard:'',error:'',rows:0,ms:0};rec.attempts.push(att);
       let err='';
       try{plan=parsePlan(reply);att.sql=(plan.sql||'').trim();rec.chart=plan.chart||{type:'none'};rec.assumption=plan.assumption||'';
-        if(!att.sql){att.guard='declined';rec.answer='';setStep(card,'sql','warn','no query: '+(rec.assumption||'cannot be answered from this data'));finish(card,rec,null);busy=false;$('go').disabled=false;return}
+        if(!att.sql){att.guard='declined';rec.answer='';setStep(card,'sql','warn','declined: the data cannot answer this');finish(card,rec,null);busy=false;$('go').disabled=false;return}
         setStep(card,'sql','ok',`SQL written${a>1?' (attempt '+a+')':''}`);
         const g=guard(att.sql);
         if(!g.ok){att.guard='rejected: '+g.why;err='UnsafeQuery: '+g.why;setStep(card,'guard','bad','guardrails: '+g.why)}
@@ -165,7 +165,6 @@ async function ask(question){
     const prompt=`Question: ${question}\n\nSQL used:\n${rec.attempts.at(-1).sql}\n\nQuery result (${res.values.length} rows, first 25 shown):\n${csv}`+(rec.assumption?`\nAssumption made: ${rec.assumption}`:'');
     rec.answer=(await llm('answer',[{role:'user',content:prompt}])).trim();
     setStep(card,'ans','ok','answered');finish(card,rec,res);
-    (window.__recs=window.__recs||[]).push(rec);
   }catch(e){card.querySelector('.ans').innerHTML=`<span class="err">${e.message.replace(/</g,'&lt;')}</span>`}
   finally{busy=false;$('go').disabled=false}
 }
@@ -179,7 +178,7 @@ async function replay(rec){
     for(let i=0;i<rec.attempts.length;i++){const a=rec.attempts[i];const n=i?` (attempt ${i+1})`:'';
       if(i)clearSteps(card,['guard','run','fix']);
       setStep(card,'sql','on',`<span class="spin"></span>writing SQL${n}`);await wait(900);
-      if(a.guard==='declined'){setStep(card,'sql','warn','no query: '+(rec.assumption||'cannot be answered'));break}
+      if(a.guard==='declined'){setStep(card,'sql','warn','declined: the data cannot answer this');break}
       setStep(card,'sql','ok','SQL written'+n);await wait(350);
       if(a.guard.startsWith('rejected')){setStep(card,'guard','bad','guardrails: '+a.guard.slice(10));setStep(card,'fix','warn','sending the error back');await wait(600);continue}
       setStep(card,'guard','ok','guardrails passed');await wait(300);
@@ -194,6 +193,7 @@ function newCard(q,isRec){const c=document.createElement('div');c.className='car
 function clearSteps(card,ids){ids.forEach(id=>{const e=card.querySelector(`.steps [data-s="${id}"]`);if(e)e.remove()})}
 function setStep(card,id,state,html){const s=card.querySelector('.steps');let e=s.querySelector(`[data-s="${id}"]`);if(!e){e=document.createElement('span');e.className='step';e.dataset.s=id;s.appendChild(e)}e.className='step '+state;e.innerHTML=html}
 function finish(card,rec,res){
+  if(rec.mode!=='rec')(window.__recs=window.__recs||[]).push(rec);
   const ans=card.querySelector('.ans'),body=card.querySelector('.body');
   const last=rec.attempts.at(-1)||{};
   if(rec.answer)ans.textContent=rec.answer;else if(last.guard==='declined')ans.innerHTML=`<span style="color:var(--warn)">This can't be answered from the data: ${(rec.assumption||'no such table or metric').replace(/</g,'&lt;')}</span>`;else ans.innerHTML='<span class="err">No answer: the query could not be made to run.</span>';

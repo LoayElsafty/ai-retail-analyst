@@ -41,12 +41,16 @@ QUESTIONS = [
 async def main(url, model):
     key = os.environ["ANTHROPIC_API_KEY"]
     async with async_playwright() as p:
-        b = await p.chromium.launch()
-        pg = await b.new_page(viewport={"width": 1200, "height": 900})
+        proxy = os.environ.get("HTTPS_PROXY")  # optional: corporate/sandbox proxy for the browser's API calls
+        b = await p.chromium.launch(proxy={"server": proxy, "bypass": "localhost,127.0.0.1"} if proxy else None)
+        ctx = await b.new_context(viewport={"width": 1200, "height": 900}, ignore_https_errors=bool(proxy))
+        pg = await ctx.new_page()
         await pg.goto(url + "#key")
         await pg.fill("#key", key)
         await pg.select_option("#model", model)
-        for q in QUESTIONS:
+        only = os.environ.get("ONLY")
+        qs = [q for q in QUESTIONS if not only or q in only.split("|")]
+        for q in qs:
             await pg.fill("#qin", q)
             await pg.click("#go")
             await pg.wait_for_function("!document.getElementById('go').disabled", timeout=120000)
@@ -56,7 +60,8 @@ async def main(url, model):
         for r in recs:
             r["mode"] = "rec"
             r["model"] = model
-        json.dump(recs, open("recordings.json", "w"), indent=1)
+        out = "recordings.json" if not only else "recordings_extra.json"
+        json.dump(recs, open(out, "w"), indent=1)
         print(f"\n{len(recs)} recordings saved to recordings.json")
         await b.close()
 
