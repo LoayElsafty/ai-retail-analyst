@@ -1,0 +1,182 @@
+# 20 business questions with a hand-written "golden" query each.
+# A model answer passes when its result contains the same values as the golden
+# result (column names and extra columns don't matter; numbers match within 0.5%).
+# `ordered: true` also checks the ranking order. `answerable: false` passes only
+# if the agent declines instead of inventing an answer.
+
+- id: q01
+  level: easy
+  question: What were total net sales across the whole period?
+  sql: SELECT ROUND(SUM(net_sales), 2) AS net_sales FROM fct_sales
+
+- id: q02
+  level: easy
+  question: What were net sales and gross margin percentage for each year?
+  ordered: true
+  sql: |
+    SELECT EXTRACT(YEAR FROM order_date) AS year,
+           ROUND(SUM(net_sales), 2) AS net_sales,
+           ROUND(SUM(gross_profit) / SUM(net_sales) * 100, 1) AS gross_margin_pct
+    FROM fct_sales GROUP BY 1 ORDER BY 1
+
+- id: q03
+  level: easy
+  question: How many orders were placed in 2025, excluding cancelled ones?
+  sql: |
+    SELECT COUNT(DISTINCT order_id) AS orders FROM fct_sales
+    WHERE EXTRACT(YEAR FROM order_date) = 2025 AND status <> 'Cancelled'
+
+- id: q04
+  level: easy
+  question: What share of items were cancelled?
+  sql: |
+    SELECT ROUND(COUNT(*) FILTER (WHERE status = 'Cancelled') * 100.0 / COUNT(*), 1) AS cancellation_rate_pct
+    FROM fct_sales
+
+- id: q05
+  level: medium
+  question: Which 5 categories generated the most gross profit in 2025?
+  ordered: true
+  sql: |
+    SELECT p.category, ROUND(SUM(s.gross_profit), 2) AS gross_profit
+    FROM fct_sales s JOIN dim_product p USING (product_id)
+    WHERE EXTRACT(YEAR FROM s.order_date) = 2025
+    GROUP BY 1 ORDER BY 2 DESC LIMIT 5
+
+- id: q06
+  level: medium
+  question: What is net sales by department (Men vs Women) for 2024?
+  sql: |
+    SELECT p.department, ROUND(SUM(s.net_sales), 2) AS net_sales
+    FROM fct_sales s JOIN dim_product p USING (product_id)
+    WHERE EXTRACT(YEAR FROM s.order_date) = 2024
+    GROUP BY 1
+
+- id: q07
+  level: medium
+  question: Which traffic source has the highest average order value?
+  ordered: true
+  sql: |
+    SELECT c.traffic_source,
+           ROUND(SUM(s.net_sales) / COUNT(DISTINCT s.order_id), 2) AS aov
+    FROM fct_sales s JOIN dim_customer c USING (customer_id)
+    WHERE s.status NOT IN ('Cancelled', 'Returned')
+    GROUP BY 1 ORDER BY 2 DESC LIMIT 1
+
+- id: q08
+  level: medium
+  question: What is the return rate by category? Show the 3 categories with the highest return rate.
+  ordered: true
+  sql: |
+    SELECT p.category,
+           ROUND(COUNT(*) FILTER (WHERE s.status = 'Returned') * 100.0
+                 / COUNT(*) FILTER (WHERE s.status <> 'Cancelled'), 1) AS return_rate_pct
+    FROM fct_sales s JOIN dim_product p USING (product_id)
+    GROUP BY 1 ORDER BY 2 DESC LIMIT 3
+
+- id: q09
+  level: medium
+  question: Which country had the most customers who bought something?
+  ordered: true
+  sql: |
+    SELECT c.country, COUNT(DISTINCT s.customer_id) AS customers
+    FROM fct_sales s JOIN dim_customer c USING (customer_id)
+    WHERE s.status <> 'Cancelled'
+    GROUP BY 1 ORDER BY 2 DESC LIMIT 1
+
+- id: q10
+  level: medium
+  question: Which distribution center ships fastest on average?
+  ordered: true
+  sql: |
+    SELECT p.distribution_center, ROUND(AVG(s.days_to_ship), 2) AS avg_days_to_ship
+    FROM fct_sales s JOIN dim_product p USING (product_id)
+    GROUP BY 1 ORDER BY 2 ASC LIMIT 1
+
+- id: q11
+  level: medium
+  question: What were monthly net sales in 2025?
+  ordered: true
+  sql: |
+    SELECT DATE_TRUNC('month', order_date) AS month, ROUND(SUM(net_sales), 2) AS net_sales
+    FROM fct_sales WHERE EXTRACT(YEAR FROM order_date) = 2025
+    GROUP BY 1 ORDER BY 1
+
+- id: q12
+  level: medium
+  question: Who are the top 3 brands by net sales in the Jeans category?
+  ordered: true
+  sql: |
+    SELECT p.brand, ROUND(SUM(s.net_sales), 2) AS net_sales
+    FROM fct_sales s JOIN dim_product p USING (product_id)
+    WHERE p.category = 'Jeans'
+    GROUP BY 1 ORDER BY 2 DESC LIMIT 3
+
+- id: q13
+  level: hard
+  question: By how much did net sales grow from 2024 to 2025, in percent?
+  sql: |
+    WITH y AS (
+      SELECT EXTRACT(YEAR FROM order_date) AS yr, SUM(net_sales) AS ns FROM fct_sales GROUP BY 1)
+    SELECT ROUND((MAX(ns) FILTER (WHERE yr = 2025) / MAX(ns) FILTER (WHERE yr = 2024) - 1) * 100, 1) AS growth_pct
+    FROM y
+
+- id: q14
+  level: hard
+  question: What were total net sales from customers in Spain?
+  note: Spain is stored as both 'Spain' and 'España'; the semantic layer says to combine them.
+  sql: |
+    SELECT ROUND(SUM(s.net_sales), 2) AS net_sales
+    FROM fct_sales s JOIN dim_customer c USING (customer_id)
+    WHERE c.country IN ('Spain', 'España')
+
+- id: q15
+  level: hard
+  question: Which category has the lowest gross margin percentage?
+  ordered: true
+  sql: |
+    SELECT p.category, ROUND(SUM(s.gross_profit) / SUM(s.net_sales) * 100, 1) AS gross_margin_pct
+    FROM fct_sales s JOIN dim_product p USING (product_id)
+    GROUP BY 1 ORDER BY 2 ASC LIMIT 1
+
+- id: q16
+  level: hard
+  question: In 2025, which month had the highest return rate, and what was it?
+  ordered: true
+  sql: |
+    SELECT DATE_TRUNC('month', order_date) AS month,
+           ROUND(COUNT(*) FILTER (WHERE status = 'Returned') * 100.0
+                 / COUNT(*) FILTER (WHERE status <> 'Cancelled'), 1) AS return_rate_pct
+    FROM fct_sales WHERE EXTRACT(YEAR FROM order_date) = 2025
+    GROUP BY 1 ORDER BY 2 DESC LIMIT 1
+
+- id: q17
+  level: hard
+  question: What share of 2025 net sales came from the top 10 brands?
+  sql: |
+    WITH b AS (
+      SELECT p.brand, SUM(s.net_sales) AS ns
+      FROM fct_sales s JOIN dim_product p USING (product_id)
+      WHERE EXTRACT(YEAR FROM s.order_date) = 2025 GROUP BY 1)
+    SELECT ROUND((SELECT SUM(ns) FROM (SELECT ns FROM b ORDER BY ns DESC LIMIT 10)) * 100.0 / SUM(ns), 1) AS top10_share_pct
+    FROM b
+
+- id: q18
+  level: hard
+  question: How many customers placed more than one non-cancelled order?
+  sql: |
+    SELECT COUNT(*) AS repeat_customers FROM (
+      SELECT customer_id FROM fct_sales WHERE status <> 'Cancelled'
+      GROUP BY 1 HAVING COUNT(DISTINCT order_id) > 1)
+
+- id: q19
+  level: refuse
+  answerable: false
+  question: How much did we spend on marketing in 2025, and what was the return on it?
+  note: There is no spend data; the agent should say so rather than guess.
+
+- id: q20
+  level: refuse
+  answerable: false
+  question: What was the average customer satisfaction score by category?
+  note: There is no satisfaction data.
