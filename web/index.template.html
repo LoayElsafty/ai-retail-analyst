@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ask the retail data · an AI analyst you can try · Loay Elsafty</title>
+<meta name="description" content="Ask a business question in plain English. The agent writes SQL, checks it against guardrails, runs it on 86,904 retail orders in your browser, fixes its own mistakes and answers with the number, a chart and the SQL.">
+<meta property="og:title" content="Ask the retail data · an AI analyst you can try · Loay Elsafty">
+<meta property="og:description" content="Plain-English questions → governed SQL → answer with the query shown. The whole agent runs in your browser.">
+<meta property="og:image" content="https://loay-elsafty.netlify.app/img/ai-analyst.jpg">
+<meta property="og:type" content="website"><meta property="og:url" content="https://loay-elsafty.netlify.app/ai-analyst/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://loay-elsafty.netlify.app/ai-analyst/">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+.viz-root{color-scheme:light;--bg:#f6f6f4;--surface:#fcfcfb;--line:#e4e3df;--grid:#ecebe7;--ink:#0b0b0b;--ink2:#52514e;--muted:#7a7975;--s1:#2a78d6;--s2:#eb6834;--good:#0ca30c;--bad:#d03b3b;--warn:#b26a00;--shade:#eef4fc}
+@media (prefers-color-scheme:dark){.viz-root{color-scheme:dark;--bg:#121211;--surface:#1a1a19;--line:#2e2e2b;--grid:#262624;--ink:#f0efec;--ink2:#c3c2b7;--muted:#8f8e88;--s1:#3987e5;--s2:#d95926;--good:#3ec13e;--bad:#e66767;--warn:#e0a040;--shade:#1c2633}}
+*{box-sizing:border-box}body{margin:0}
+.viz-root{background:var(--bg);color:var(--ink);font:14px/1.5 "IBM Plex Sans",system-ui,sans-serif;min-height:100vh;padding:24px 20px 56px}
+.wrap{max-width:1080px;margin:0 auto}
+a{color:var(--s1)}
+.back{font-size:13px;color:var(--ink2);text-decoration:none}.back:hover{color:var(--s1)}
+h1{font-size:26px;margin:10px 0 4px;font-weight:600;letter-spacing:-.3px}
+.lede{margin:0;color:var(--ink2);max-width:800px}
+.meta{font:12px "IBM Plex Mono",monospace;color:var(--muted);margin-top:8px}
+.modes{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 10px}
+.mode{flex:1 1 240px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left;font:inherit;color:var(--ink)}
+.mode[aria-pressed=true]{border-color:var(--s1);box-shadow:inset 0 0 0 1px var(--s1)}
+.mode b{display:block;font-size:13px}.mode span{display:block;font-size:12px;color:var(--ink2);margin-top:2px}
+.mode .st{font-size:11px;margin-top:4px;color:var(--muted)}
+.keybox{display:none;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12.5px;color:var(--ink2)}
+.keybox input{font:13px "IBM Plex Mono",monospace;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);min-width:260px;flex:1}
+.ask{display:flex;gap:8px;margin:10px 0 8px}
+.ask input{flex:1;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.btn{font:inherit;font-weight:500;background:var(--s1);color:#fff;border:0;border-radius:8px;padding:9px 16px;cursor:pointer;white-space:nowrap}
+.btn:disabled{opacity:.5;cursor:default}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px}
+.chips button{font:inherit;font-size:12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 11px;color:var(--ink);cursor:pointer}
+.chips button:hover{border-color:var(--s1);color:var(--s1)}
+.chips button.rec::before{content:"▶";font-size:9px;margin-right:6px;color:var(--s1)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px;position:relative}
+.q{font-size:13px;color:var(--ink2);margin:0 0 6px}.q b{color:var(--ink)}
+.ans{font-size:17px;font-weight:600;line-height:1.4;margin:0 0 10px}
+.steps{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.step{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--ink2);background:var(--bg)}
+.step.on{border-color:var(--s1);color:var(--s1)}.step.ok{border-color:var(--good);color:var(--good)}.step.bad{border-color:var(--bad);color:var(--bad)}.step.warn{border-color:var(--warn);color:var(--warn)}
+.spin{display:inline-block;width:10px;height:10px;border:2px solid var(--s1);border-right-color:transparent;border-radius:50%;animation:r .7s linear infinite;vertical-align:-1px;margin-right:6px}@keyframes r{to{transform:rotate(360deg)}}
+details{margin-top:8px}summary{cursor:pointer;font-size:13px;color:var(--ink2)}
+pre{font:12px/1.5 "IBM Plex Mono",monospace;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px;overflow:auto;white-space:pre-wrap;margin:6px 0}
+.att{font-size:12px;color:var(--ink2);margin:8px 0 2px}
+.att b{color:var(--ink)}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}th,td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}th{color:var(--ink2);font-weight:500;font-size:12px}td.l,th.l{text-align:left}
+.tbl{overflow-x:auto;max-height:340px;overflow-y:auto;margin-top:8px}
+svg{display:block;width:100%;height:auto;overflow:visible}svg text{fill:var(--ink2);font:11px "IBM Plex Sans",sans-serif}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:6px 9px;border-radius:6px;white-space:nowrap;opacity:0;transition:opacity .1s;z-index:5}
+.err{color:var(--bad)}
+.note{font-size:12.5px;color:var(--muted);max-width:860px}
+.assume{font-size:12.5px;color:var(--ink2);background:var(--shade);border-radius:6px;padding:6px 10px;margin:0 0 10px}
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:6px 0 2px}
+.how div{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px}.how b{display:block;font-size:12px;margin-bottom:2px}
+</style></head>
+<body><div class="viz-root"><div class="wrap">
+<a class="back" href="/">← Loay Elsafty · portfolio</a>
+<header>
+<h1>Ask the retail data</h1>
+<p class="lede">Type a business question. The agent writes the SQL, checks it against guardrails, runs it on 86,904 retail order items <b>inside your browser</b>, fixes its own query if it fails, and answers with the number, a chart and the SQL behind it.</p>
+<p class="meta">TheLook e-commerce, 2023–2025 · same tables and KPI definitions as the <a href="../retail-performance-pack/">retail performance pack</a> · scored 19/20 on a 20-question test · <a href="https://github.com/LoayElsafty/ai-retail-analyst" target="_blank" rel="noopener">code, tests and evaluation on GitHub</a></p>
+</header>
+
+<div class="modes" role="group" aria-label="Mode">
+<button class="mode" data-m="rec" aria-pressed="true"><b>▶ Recorded answers</b><span>Real runs, replayed step by step. No model call.</span><div class="st" id="st-rec"></div></button>
+<button class="mode" data-m="live" aria-pressed="false"><b>Live</b><span>Ask anything. Runs on this site's model budget, a few questions per visitor.</span><div class="st" id="st-live">checking…</div></button>
+<button class="mode" data-m="key" aria-pressed="false"><b>Your own key</b><span>Paste an Anthropic API key. It stays in this tab and is sent only to api.anthropic.com.</span><div class="st" id="st-key"></div></button>
+</div>
+<div class="keybox" id="keybox"><span>Anthropic API key</span><input id="key" type="password" placeholder="sk-ant-…" autocomplete="off"><span>Model</span><select id="model" style="font:inherit;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"><option value="claude-sonnet-5-5">claude-sonnet-5-5</option><option value="claude-haiku-5-5">claude-haiku-5-5</option></select></div>
+
+<div class="ask"><input id="qin" placeholder="e.g. Which 5 categories made the most gross profit in 2025?" aria-label="Your question"><button class="btn" id="go">Ask</button></div>
+<div class="chips" id="chips"></div>
+<div id="feed"></div>
+
+<div class="card"><h3 style="margin:0 0 4px;font-size:14px">How each answer is produced</h3>
+<div class="how">
+<div><b>1 · Semantic layer</b>The three tables and one definition per KPI (net sales, margin, AOV, return rate…) go with every question, so the model never invents a business rule.</div>
+<div><b>2 · Model writes SQL</b>Returns JSON: the query, a chart suggestion and any assumption it made.</div>
+<div><b>3 · Guardrails</b>Single read-only SELECT, known tables only, row cap. Anything else is rejected and sent back.</div>
+<div><b>4 · Runs in your browser</b>SQLite (sql.js) on the same 86,904 rows. Nothing leaves your machine except the model call.</div>
+<div><b>5 · Self-correction</b>A rejected or failing query goes back to the model with the error, up to three attempts.</div>
+<div><b>6 · Answer from the result only</b>The written answer may use only the numbers in the table, and the SQL is always shown.</div>
+</div>
+<p class="note" style="margin:10px 0 0">The 19/20 evaluation ran the Python version of this agent on DuckDB with Claude Sonnet 5.5; this page is the same design ported to SQLite so it can run with no server. Live mode uses a small daily budget and may say no when it's used up. The data is Google's public TheLook dataset, a fictional retailer.</p></div>
+</div></div>
+<script>
+const PROMPTS=__PROMPTS__;
+const RECORDINGS=__RECORDINGS__;
+const EXAMPLES=["What were net sales and gross margin by year?","Which 5 categories made the most gross profit in 2025?","Which traffic source brings the highest average order value?","How did the return rate change month by month in 2025?","Which brands have the worst return rate, with at least 500 items sold?","What share of 2025 net sales came from the top 10 brands?","Which country's customers spend the most per order?","How many customers placed more than one order?","What was our marketing spend in 2025?"];
+const ALLOWED=["fct_sales","dim_product","dim_customer"],LIMIT=1000,MAX_ATTEMPTS=3;
+const $=id=>document.getElementById(id);
+let mode="rec",db=null,dbPromise=null,busy=false;
+// ---------- data ----------
+function loadDb(){
+  if(dbPromise)return dbPromise;
+  dbPromise=(async()=>{
+    const [SQL,buf]=await Promise.all([
+      new Promise((res,rej)=>{const s=document.createElement('script');s.src='../retail-performance-pack/sql/sql-wasm.js';s.onload=()=>initSqlJs({locateFile:f=>'../retail-performance-pack/sql/'+f}).then(res,rej);s.onerror=()=>rej(new Error('Could not load the SQL engine'));document.head.appendChild(s)}),
+      (async()=>{const r=await fetch('../retail-performance-pack/sql/retail.db.gz');if(!r.ok)throw new Error('Could not fetch the data');let u8=new Uint8Array(await r.arrayBuffer());
+        if(u8[0]===0x1f&&u8[1]===0x8b){if(!('DecompressionStream' in window))throw new Error('This browser cannot decompress the data');u8=new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer())}return u8})()]);
+    db=new SQL.Database(buf);return db})();
+  return dbPromise;
+}
+// ---------- guardrails (mirror of analyst/guard.py, for SQLite) ----------
+function guard(sql){
+  let s=sql.replace(/--[^\n]*/g,'').replace(/\/\*[\s\S]*?\*\//g,'').trim().replace(/;\s*$/,'');
+  if(!s)return{ok:false,why:'Empty query.'};
+  const noStr=s.replace(/'(?:[^']|'')*'/g,"''");
+  if(/;/.test(noStr))return{ok:false,why:'Exactly one statement is allowed.'};
+  if(!/^(select|with)\b/i.test(noStr))return{ok:false,why:'Only SELECT queries are allowed.'};
+  const bad=noStr.match(/\b(insert|update|delete|drop|create|alter|attach|detach|pragma|vacuum|reindex|truncate|grant)\b/i)||noStr.match(/\breplace\s+into\b/i);
+  if(bad)return{ok:false,why:'Forbidden operation: '+bad[0].toUpperCase()+'.'};
+  if(/\b(readfile|writefile|load_extension|fts\w*|sqlite_master|sqlite_schema)\b/i.test(noStr))return{ok:false,why:'That function or table is not allowed.'};
+  const ctes=new Set();for(const m of noStr.matchAll(/(?:\bwith\b|,)\s*(?:recursive\s+)?([a-z_][\w]*)\s*(?:\([^)]*\))?\s+as\s*\(/gi))ctes.add(m[1].toLowerCase());
+  for(const m of noStr.matchAll(/\b(?:from|join)\s+([a-z_][\w.]*)/gi)){const t=m[1].toLowerCase();if(ctes.has(t))continue;if(t.includes('.'))return{ok:false,why:'Qualified table names are not allowed: '+m[1]+'.'};if(!ALLOWED.includes(t))return{ok:false,why:`Unknown table '${m[1]}'. Allowed: ${ALLOWED.join(', ')}.`}}
+  const lim=noStr.match(/\blimit\s+(\d+)\s*$/i);
+  const safe=lim&&+lim[1]<=LIMIT?s:`SELECT * FROM (\n${s}\n) AS q LIMIT ${LIMIT}`;
+  return{ok:true,sql:safe};
+}
+// ---------- model calls ----------
+async function llm(kind,messages){
+  const system=PROMPTS[kind];
+  if(mode==='key'){
+    const key=$('key').value.trim();if(!key)throw new Error('Paste an Anthropic API key first.');
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:$('model').value,max_tokens:1500,system,messages})});
+    const j=await r.json();if(!r.ok)throw new Error(j.error?.message||('API error '+r.status));return j.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+  }
+  const r=await fetch('/.netlify/functions/llm',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kind,messages})});
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('Live mode error '+r.status));return j.text;
+}
+function parsePlan(text){const t=text.trim().replace(/^```(?:json)?\s*|\s*```$/g,'');const m=t.match(/\{[\s\S]*\}/);if(!m)throw new Error('The model did not return JSON.');return JSON.parse(m[0])}
+// ---------- the agent loop ----------
+async function ask(question){
+  if(busy)return;busy=true;$('go').disabled=true;
+  const card=newCard(question);const rec={q:question,mode,model:mode==='key'?$('model').value:'site',attempts:[],answer:'',assumption:'',chart:{type:'none'},columns:[],values:[]};
+  try{
+    setStep(card,'load','on','<span class="spin"></span>loading data');await loadDb();setStep(card,'load','ok','data ready');
+    const messages=[{role:'user',content:question}];let plan=null,res=null;
+    for(let a=1;a<=MAX_ATTEMPTS;a++){
+      if(a>1)clearSteps(card,['guard','run','fix']);
+      setStep(card,'sql','on',`<span class="spin"></span>writing SQL${a>1?' (attempt '+a+')':''}`);
+      const reply=await llm('sql',messages);messages.push({role:'assistant',content:reply});
+      const att={sql:'',guard:'',error:'',rows:0,ms:0};rec.attempts.push(att);
+      let err='';
+      try{plan=parsePlan(reply);att.sql=(plan.sql||'').trim();rec.chart=plan.chart||{type:'none'};rec.assumption=plan.assumption||'';
+        if(!att.sql){att.guard='declined';rec.answer='';setStep(card,'sql','warn','no query: '+(rec.assumption||'cannot be answered from this data'));finish(card,rec,null);busy=false;$('go').disabled=false;return}
+        setStep(card,'sql','ok',`SQL written${a>1?' (attempt '+a+')':''}`);
+        const g=guard(att.sql);
+        if(!g.ok){att.guard='rejected: '+g.why;err='UnsafeQuery: '+g.why;setStep(card,'guard','bad','guardrails: '+g.why)}
+        else{att.guard='passed';setStep(card,'guard','ok','guardrails passed');
+          const t0=performance.now();try{const out=db.exec(g.sql);att.ms=Math.round(performance.now()-t0);res=out.length?out[0]:{columns:['(no rows)'],values:[]};att.rows=res.values.length;setStep(card,'run','ok',`${att.rows} rows · ${att.ms} ms`)}
+          catch(e){err='SQLiteError: '+e.message;att.error=e.message;setStep(card,'run','bad','query failed: '+e.message)}}
+      }catch(e){err=e.message;att.error=e.message;setStep(card,'sql','bad',e.message)}
+      if(!err)break;
+      res=null;if(a<MAX_ATTEMPTS){messages.push({role:'user',content:`That failed with: ${err}\nFix it and reply with the same JSON format.`});setStep(card,'fix','warn',`sending the error back (${a}/${MAX_ATTEMPTS-1})`)}
+    }
+    if(!res){rec.answer='';setStep(card,'ans','bad','gave up after '+MAX_ATTEMPTS+' attempts');finish(card,rec,null);return}
+    rec.columns=res.columns;rec.values=res.values.slice(0,100);
+    setStep(card,'ans','on','<span class="spin"></span>writing the answer');
+    const csv=[res.columns.join(','),...res.values.slice(0,25).map(r=>r.join(','))].join('\n');
+    const prompt=`Question: ${question}\n\nSQL used:\n${rec.attempts.at(-1).sql}\n\nQuery result (${res.values.length} rows, first 25 shown):\n${csv}`+(rec.assumption?`\nAssumption made: ${rec.assumption}`:'');
+    rec.answer=(await llm('answer',[{role:'user',content:prompt}])).trim();
+    setStep(card,'ans','ok','answered');finish(card,rec,res);
+    (window.__recs=window.__recs||[]).push(rec);
+  }catch(e){card.querySelector('.ans').innerHTML=`<span class="err">${e.message.replace(/</g,'&lt;')}</span>`}
+  finally{busy=false;$('go').disabled=false}
+}
+// ---------- replay ----------
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+async function replay(rec){
+  if(busy)return;busy=true;$('go').disabled=true;
+  const card=newCard(rec.q,true);
+  try{
+    setStep(card,'load','on','<span class="spin"></span>loading data');await wait(400);setStep(card,'load','ok','data ready');
+    for(let i=0;i<rec.attempts.length;i++){const a=rec.attempts[i];const n=i?` (attempt ${i+1})`:'';
+      if(i)clearSteps(card,['guard','run','fix']);
+      setStep(card,'sql','on',`<span class="spin"></span>writing SQL${n}`);await wait(900);
+      if(a.guard==='declined'){setStep(card,'sql','warn','no query: '+(rec.assumption||'cannot be answered'));break}
+      setStep(card,'sql','ok','SQL written'+n);await wait(350);
+      if(a.guard.startsWith('rejected')){setStep(card,'guard','bad','guardrails: '+a.guard.slice(10));setStep(card,'fix','warn','sending the error back');await wait(600);continue}
+      setStep(card,'guard','ok','guardrails passed');await wait(300);
+      if(a.error){setStep(card,'run','bad','query failed: '+a.error);setStep(card,'fix','warn','sending the error back');await wait(600);continue}
+      setStep(card,'run','ok',`${a.rows} rows · ${a.ms} ms`);await wait(300);}
+    if(rec.answer){setStep(card,'ans','on','<span class="spin"></span>writing the answer');await wait(700);setStep(card,'ans','ok','answered')}
+    finish(card,rec,rec.columns.length?{columns:rec.columns,values:rec.values}:null);
+  }finally{busy=false;$('go').disabled=false}
+}
+// ---------- rendering ----------
+function newCard(q,isRec){const c=document.createElement('div');c.className='card';c.innerHTML=`<p class="q"><b>${q.replace(/</g,'&lt;')}</b>${isRec?' <span style="color:var(--muted)">· recorded run</span>':''}</p><div class="steps"></div><p class="ans"></p><div class="body"></div>`;$('feed').prepend(c);return c}
+function clearSteps(card,ids){ids.forEach(id=>{const e=card.querySelector(`.steps [data-s="${id}"]`);if(e)e.remove()})}
+function setStep(card,id,state,html){const s=card.querySelector('.steps');let e=s.querySelector(`[data-s="${id}"]`);if(!e){e=document.createElement('span');e.className='step';e.dataset.s=id;s.appendChild(e)}e.className='step '+state;e.innerHTML=html}
+function finish(card,rec,res){
+  const ans=card.querySelector('.ans'),body=card.querySelector('.body');
+  const last=rec.attempts.at(-1)||{};
+  if(rec.answer)ans.textContent=rec.answer;else if(last.guard==='declined')ans.innerHTML=`<span style="color:var(--warn)">This can't be answered from the data: ${(rec.assumption||'no such table or metric').replace(/</g,'&lt;')}</span>`;else ans.innerHTML='<span class="err">No answer: the query could not be made to run.</span>';
+  let h='';if(rec.assumption&&rec.answer)h+=`<div class="assume">Assumption: ${rec.assumption.replace(/</g,'&lt;')}</div>`;
+  if(res&&res.values.length){h+=`<div class="chart"></div><div class="tbl"><table><thead><tr>${res.columns.map((c,i)=>`<th${typeof res.values[0][i]==='number'?'':' class="l"'}>${c}</th>`).join('')}</tr></thead><tbody>${res.values.slice(0,100).map(r=>`<tr>${r.map(v=>`<td${typeof v==='number'?'':' class="l"'}>${v==null?'<span style="color:var(--muted)">null</span>':typeof v==='number'?(Number.isInteger(v)?v.toLocaleString():v.toLocaleString(undefined,{maximumFractionDigits:2})):String(v).replace(/</g,'&lt;')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`}
+  h+=`<details><summary>How it got there: ${rec.attempts.length} attempt${rec.attempts.length===1?'':'s'} · ${rec.mode==='rec'||rec.mode==='replay'?'recorded':rec.mode==='key'?rec.model:'live'}</summary>${rec.attempts.map((a,i)=>`<div class="att"><b>Attempt ${i+1}</b> · ${a.guard==='declined'?'model declined (no query)':a.guard.startsWith('rejected')?'<span class="err">guardrails rejected</span>':a.error?'<span class="err">ran and failed</span>':'passed guardrails, ran in '+a.ms+' ms, '+a.rows+' rows'}</div>${a.sql?`<pre>${a.sql.replace(/</g,'&lt;')}</pre>`:''}${a.guard.startsWith('rejected')?`<pre class="err">${a.guard.slice(10).replace(/</g,'&lt;')}</pre>`:''}${a.error?`<pre class="err">${a.error.replace(/</g,'&lt;')}</pre>`:''}`).join('')}</details>`;
+  body.innerHTML=h;
+  if(res&&res.values.length)chart(body.querySelector('.chart'),rec.chart,res,card);
+}
+function chart(host,c,res,card){
+  const cols=res.columns,v=res.values;let xi=cols.indexOf(c?.x),yi=cols.indexOf(c?.y);
+  if(!c||c.type==='none'||xi<0||yi<0){if(cols.length>=2&&v.length>=2&&v.length<=40&&v.every(r=>typeof r[1]==='number')){xi=0;yi=1;c={type:/^\d{4}(-\d{2})?/.test(String(v[0][0]))?'line':'bar'}}else return}
+  if(v.length<2||v.length>60||!v.every(r=>typeof r[yi]==='number'))return;
+  const xs=v.map(r=>String(r[xi])),ys=v.map(r=>r[yi]);
+  const W=Math.max(320,host.clientWidth||900),H=230,m={l:56,r:10,t:10,b:Math.max(...xs.map(s=>s.length))>10&&c.type!=='line'?64:28};
+  const NS='http://www.w3.org/2000/svg',el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e};
+  const svg=el('svg',{viewBox:`0 0 ${W} ${H}`},host);
+  let lo=Math.min(0,...ys),hi=Math.max(0,...ys);if(hi===lo)hi=lo+1;const raw=(hi-lo)/4,mag=Math.pow(10,Math.floor(Math.log10(raw))),nf=raw/mag,step=(nf<=1?1:nf<=2?2:nf<=2.5?2.5:nf<=5?5:10)*mag;lo=Math.floor(lo/step)*step;hi=Math.ceil(hi/step)*step;
+  const Y=y=>m.t+(H-m.t-m.b)*(1-(y-lo)/(hi-lo)),bw=(W-m.l-m.r)/xs.length,X=i=>m.l+bw*i;
+  for(let g=lo;g<=hi+1e-9;g+=step){el('line',{x1:m.l,x2:W-m.r,y1:Y(g),y2:Y(g),stroke:'var(--grid)'},svg);el('text',{x:m.l-6,y:Y(g)+4,'text-anchor':'end'},svg).textContent=Math.abs(g)>=1e6?(g/1e6).toFixed(1)+'M':Math.abs(g)>=1e3?(g/1e3).toFixed(0)+'k':(+g.toFixed(2)).toString()}
+  if(c.type==='line')el('path',{d:ys.map((y,i)=>`${i?'L':'M'}${(X(i)+bw/2).toFixed(1)},${Y(y).toFixed(1)}`).join(''),fill:'none',stroke:'var(--s1)','stroke-width':2},svg);
+  else ys.forEach((y,i)=>el('rect',{x:X(i)+bw*.15,y:Y(Math.max(0,y)),width:bw*.7,height:Math.abs(Y(y)-Y(0)),rx:3,fill:'var(--s1)'},svg));
+  const every=Math.ceil(xs.length/(c.type==='line'?8:40));xs.forEach((x,i)=>{if(i%every)return;const t=el('text',{x:X(i)+bw/2,y:H-m.b+14,'text-anchor':m.b>28?'end':'middle'},svg);t.textContent=x.length>18?x.slice(0,17)+'…':x;if(m.b>28)t.setAttribute('transform',`rotate(-35 ${X(i)+bw/2} ${H-m.b+14})`)});
+  let tip=card.querySelector('.tip');if(!tip){tip=document.createElement('div');tip.className='tip';card.appendChild(tip)}
+  const hit=el('rect',{x:m.l,y:m.t,width:W-m.l-m.r,height:H-m.t-m.b,fill:'transparent'},svg);
+  hit.addEventListener('mousemove',e=>{const r=svg.getBoundingClientRect();const i=Math.max(0,Math.min(xs.length-1,Math.floor(((e.clientX-r.left)*W/r.width-m.l)/bw)));tip.innerHTML=`<b>${xs[i]}</b><br>${cols[yi]}: ${ys[i].toLocaleString()}`;tip.style.opacity=1;const cr=card.getBoundingClientRect();let lx=e.clientX-cr.left+12;if(lx>cr.width-180)lx-=190;tip.style.left=lx+'px';tip.style.top=(e.clientY-cr.top-10)+'px'});
+  hit.addEventListener('mouseleave',()=>tip.style.opacity=0);
+}
+// ---------- modes and wiring ----------
+function setMode(m){mode=m;document.querySelectorAll('.mode').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===m));$('keybox').style.display=m==='key'?'flex':'none';renderChips();
+  $('qin').placeholder=m==='rec'?'Pick a recorded question below':'e.g. Which 5 categories made the most gross profit in 2025?';if(m!=='rec')loadDb().catch(()=>{})}
+function renderChips(){const c=$('chips');
+  if(mode==='rec'){c.innerHTML=RECORDINGS.length?RECORDINGS.map((r,i)=>`<button class="rec" data-i="${i}">${r.q.replace(/</g,'&lt;')}</button>`).join(''):'<span class="note">No recordings yet.</span>'}
+  else c.innerHTML=EXAMPLES.map(q=>`<button data-q="${q.replace(/"/g,'&quot;')}">${q}</button>`).join('');}
+$('chips').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.i!=null)replay(RECORDINGS[+b.dataset.i]);else{$('qin').value=b.dataset.q;ask(b.dataset.q)}};
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+$('go').onclick=()=>{const q=$('qin').value.trim();if(!q)return;if(mode==='rec'){const hit=RECORDINGS.find(r=>r.q.toLowerCase()===q.toLowerCase());if(hit)return replay(hit);setMode(liveOk?'live':'key');}ask(q)};
+$('qin').addEventListener('keydown',e=>{if(e.key==='Enter')$('go').click()});
+let liveOk=false;
+fetch('/.netlify/functions/llm?ping=1').then(r=>r.json()).then(j=>{liveOk=!!j.ok;$('st-live').textContent=j.ok?`available · ${j.model} · up to ${j.per_visitor} questions per visitor per day`:'not available right now';if(!j.ok)$('[data-m=live]').disabled=true}).catch(()=>{$('st-live').textContent='not available on this host';document.querySelector('[data-m=live]').disabled=true});
+$('st-rec').textContent=RECORDINGS.length?`${RECORDINGS.length} recorded runs · ${RECORDINGS[0]?.model||''}`:'';
+window.exportRecordings=()=>JSON.stringify(window.__recs||[]);
+setMode('rec');
+if(location.hash==='#live')setMode('live');if(location.hash==='#key')setMode('key');
+</script></body></html>

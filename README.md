@@ -85,3 +85,7 @@ tests/          guardrail, data, agent-loop and scorer tests
 
 ---
 Loay Elsafty · [loay-elsafty.netlify.app](https://loay-elsafty.netlify.app) · [linkedin.com/in/loay-elsafty](https://www.linkedin.com/in/loay-elsafty)
+
+## Try it in the browser
+
+The agent also runs entirely client-side at **[loay-elsafty.netlify.app/ai-analyst](https://loay-elsafty.netlify.app/ai-analyst/)**: same semantic layer and guardrails in JavaScript, SQL on SQLite in your browser, recorded runs for visitors without a key. See [`web/`](web/).
